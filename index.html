@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Cetak Faktur - Makarios Manokwari v3</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&display=swap');
+        
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 13px;
+            color: #000;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* Control Panel Design */
+        .no-print {
+            max-width: 210mm;
+            margin: 0 auto 20px auto;
+        }
+        
+        .control-panel {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border-left: 5px solid #0056b3;
+        }
+        
+        .panel-title {
+            font-weight: bold;
+            font-size: 14px;
+            color: #333;
+            margin-top: 0;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .search-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        
+        .form-label {
+            font-size: 11px;
+            font-weight: bold;
+            color: #666;
+            text-transform: uppercase;
+        }
+
+        .form-input {
+            padding: 10px;
+            border: 1px solid #cbd5e1;
+            border-radius: 5px;
+            font-size: 13px;
+            background-color: #fff;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+        
+        .form-input:focus {
+            border-color: #0056b3;
+            outline: none;
+        }
+
+        .btn {
+            color: white;
+            padding: 10px 18px;
+            border: none;
+            cursor: pointer;
+            font-size: 13px;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background-color 0.2s;
+            height: 38px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .btn-add { background-color: #2e7d32; }
+        .btn-add:hover { background-color: #1b5e20; }
+        .btn-manual { background-color: #475569; }
+        .btn-manual:hover { background-color: #334155; }
+        .btn-print { background-color: #0056b3; margin-left: auto; }
+        .btn-print:hover { background-color: #004494; }
+
+        /* Invoice Page Sheet Styling */
+        .page {
+            background: white;
+            width: 210mm;
+            min-height: 148mm;
+            margin: 0 auto;
+            padding: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        [contenteditable="true"] {
+            outline: none;
+            border-bottom: 1px dashed #bbb;
+            transition: background 0.2s;
+        }
+        [contenteditable="true"]:hover { background: #f0f4ff; }
+
+        /* Invoice Header layout */
+        .header { display: flex; justify-content: space-between; margin-bottom: 25px; line-height: 1.5; }
+        .header-left { flex: 1.2; }
+        .header-right { flex: 1.5; display: flex; justify-content: space-between; gap: 20px; }
+        .logo-area { display: flex; align-items: center; margin-bottom: 10px; }
+        .logo {
+            width: 52px; height: 52px; border: 2.5px solid #0056b3; border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 32px; font-weight: bold; color: #0056b3; margin-right: 15px;
+        }
+        .title { font-weight: bold; font-size: 16px; margin-bottom: 3px; letter-spacing: 0.5px; }
+        .info-grid { display: grid; grid-template-columns: 95px 10px auto; row-gap: 4px; }
+
+        /* Bill Table styling match to standard matrix print */
+        table {
+            width: 100%; border-collapse: collapse; margin-bottom: 20px;
+            font-family: 'Courier Prime', monospace; font-size: 12px;
+        }
+        th { border-top: 1px solid #000; border-bottom: 1px solid #000; padding: 8px 5px; text-align: left; font-weight: normal; }
+        td { padding: 6px 5px; vertical-align: top; }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .border-bottom { border-bottom: 1px solid #000; }
+
+        .action-cell {
+            color: #dc2626;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        /* Summary / Total Section Layout */
+        .summary-container { display: flex; justify-content: space-between; font-family: 'Courier Prime', monospace; font-size: 12px; margin-top: 10px; }
+        .summary-left { flex: 1.1; line-height: 1.6; padding-right: 20px; }
+        .summary-right { width: 310px; line-height: 1.6; }
+        .summary-grid { display: grid; grid-template-columns: 110px 20px auto; }
+
+        /* Stamp Sign Area */
+        .stamp-area { display: flex; justify-content: space-between; margin-top: 35px; }
+        .stamp-box { width: 250px; text-align: center; }
+        .stamp-placeholder { height: 75px; border: 1px dashed #cbd5e1; margin: 8px auto; position: relative; border-radius: 4px; }
+
+        /* Print Media Adjustments */
+        @media print {
+            body { background-color: white; margin: 0; padding: 0; }
+            .page { box-shadow: none; width: 100%; padding: 0; margin: 0; min-height: auto; }
+            .no-print { display: none !important; }
+            [contenteditable="true"] { border-bottom: none; }
+            .stamp-placeholder { border: none; }
+            .action-col { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- CONTROL PANEL FOR MANAGEMENT -->
+    <div class="no-print">
+        <div class="control-panel">
+            <div class="panel-title">📦 Panel Input Barang (Manokwari Region Database)</div>
+            
+            <div class="search-row">
+                <!-- Live Search Box -->
+                <div class="form-group" style="width: 200px;">
+                    <label class="form-label">Cari Nama Barang</label>
+                    <input type="text" id="cariInput" class="form-input" placeholder="Ketik nama barang..." oninput="filterDropdown()">
+                </div>
+
+                <!-- Main Dropdown List -->
+                <div class="form-group" style="width: 320px;">
+                    <label class="form-label">Pilih Item Barang</label>
+                    <select id="pilihBarang" class="form-input">
+                        <option value="" disabled selected>-- Pilih atau Cari di Samping --</option>
+                <optgroup label="Alat Tulis Kantor (Kertas)">
+                    <option value="70000" data-kode="KRT-P1-A470">Kertas HVS PaperOne A4 70gr (1 Rim)</option>
+                    <option value="80000" data-kode="KRT-P1-A480">Kertas HVS PaperOne A4 80gr (1 Rim)</option>
+                    <option value="83000" data-kode="KRT-P1-F470">Kertas HVS PaperOne F4 70gr (1 Rim)</option>
+                    <option value="93000" data-kode="KRT-P1-F480">Kertas HVS PaperOne F4 80gr (1 Rim)</option>
+                    <option value="165000" data-kode="KRT-P1-A380">Kertas HVS PaperOne A3 80gr (1 Rim)</option>
+                    <option value="65000" data-kode="KRT-SD-A470">Kertas HVS Sinar Dunia A4 70gr (1 Rim)</option>
+                    <option value="75000" data-kode="KRT-SD-A480">Kertas HVS Sinar Dunia A4 80gr (1 Rim)</option>
+                    <option value="78000" data-kode="KRT-SD-F470">Kertas HVS Sinar Dunia F4 70gr (1 Rim)</option>
+                    <option value="88000" data-kode="KRT-SD-F480">Kertas HVS Sinar Dunia F4 80gr (1 Rim)</option>
+                    <option value="160000" data-kode="KRT-SD-A380">Kertas HVS Sinar Dunia A3 80gr (1 Rim)</option>
+                    <option value="65000" data-kode="KRT-BD-A470">Kertas HVS Bola Dunia A4 70gr (1 Rim)</option>
+                    <option value="75000" data-kode="KRT-BD-A480">Kertas HVS Bola Dunia A4 80gr (1 Rim)</option>
+                    <option value="78000" data-kode="KRT-BD-F470">Kertas HVS Bola Dunia F4 70gr (1 Rim)</option>
+                    <option value="88000" data-kode="KRT-BD-F480">Kertas HVS Bola Dunia F4 80gr (1 Rim)</option>
+                    <option value="160000" data-kode="KRT-BD-A380">Kertas HVS Bola Dunia A3 80gr (1 Rim)</option>
+                    <option value="65000" data-kode="KRT-BUFF-A4">Kertas Buffalo A4 (Pack Isi 100 Lembar) Warna-Warni</option>
+                    <option value="75000" data-kode="KRT-BUFF-F4">Kertas Buffalo F4 (Pack Isi 100 Lembar) Warna-Warni</option>
+                    <option value="35000" data-kode="KRT-CONC-A4">Kertas Concorde A4 90gr (Pack Isi 20 Lembar)</option>
+                    <option value="45000" data-kode="KRT-GLOS-A4">Kertas Foto Glossy A4 210gr (Pack Isi 20 Lembar)</option>
+                    <option value="5000" data-kode="KRT-MANI-LBR">Kertas Manila / Karton Manila (1 Lembar)</option>
+                    <option value="95000" data-kode="KRT-CARB-KOT">Kertas Karbon Tiger F4 (1 Kotak/100 Lembar)</option>
+                    <option value="6000" data-kode="KRT-THM-5730">Kertas Thermal Kasir / EDC 57 X 30 (1 Roll)</option>
+                    <option value="8000" data-kode="KRT-THM-5740">Kertas Thermal Kasir / EDC 57 X 40 (1 Roll)</option>
+                    <option value="18000" data-kode="KRT-THM-8060">Kertas Thermal Antrean / POS 80 X 60 (1 Roll)</option>
+                    <option value="24000" data-kode="KRT-THM-8080">Kertas Thermal Antrean / POS 80 X 80 (1 Roll)</option>
+                </optgroup>
+                <optgroup label="Alat Tulis Kantor (Pena/Pensil)">
+                    <option value="3500" data-kode="PEN-STD-AE7-HTM">Pulpen Standard AE7 Warna Hitam (1 Pcs)</option>
+                    <option value="38000" data-kode="PEN-STD-AE7K-HTM">Pulpen Standard AE7 Warna Hitam (1 Kotak/12 Pcs)</option>
+                    <option value="3500" data-kode="PEN-STD-AE7-BRU">Pulpen Standard AE7 Warna Biru (1 Pcs)</option>
+                    <option value="38000" data-kode="PEN-STD-AE7K-BRU">Pulpen Standard AE7 Warna Biru (1 Kotak/12 Pcs)</option>
+                    <option value="3500" data-kode="PEN-STD-AE7-MRH">Pulpen Standard AE7 Warna Merah (1 Pcs)</option>
+                    <option value="38000" data-kode="PEN-STD-AE7K-MRH">Pulpen Standard AE7 Warna Merah (1 Kotak/12 Pcs)</option>
+                    <option value="25000" data-kode="PEN-PLT-BL-HTM">Pulpen Pilot Ballliner Hitam (1 Pcs)</option>
+                    <option value="30000" data-kode="PEN-PLT-G2-HTM">Pulpen Gel Pilot G2 Hitam (1 Pcs)</option>
+                    <option value="25000" data-kode="PEN-PLT-BL-BRU">Pulpen Pilot Ballliner Biru (1 Pcs)</option>
+                    <option value="30000" data-kode="PEN-PLT-G2-BRU">Pulpen Gel Pilot G2 Biru (1 Pcs)</option>
+                    <option value="25000" data-kode="PEN-PLT-BL-MRH">Pulpen Pilot Ballliner Merah (1 Pcs)</option>
+                    <option value="30000" data-kode="PEN-PLT-G2-MRH">Pulpen Gel Pilot G2 Merah (1 Pcs)</option>
+                    <option value="12500" data-kode="SPID-SNW-BM-HTM">Spidol Boardmarker Snowman Hitam (1 Pcs)</option>
+                    <option value="140000" data-kode="SPID-SNW-BMK-HTM">Spidol Boardmarker Snowman Hitam (1 Kotak/12 Pcs)</option>
+                    <option value="3000" data-kode="SPID-SNW-AG-HTM">Spidol Kecil Snowman Warna Hitam (1 Pcs)</option>
+                    <option value="12000" data-kode="SPID-SNW-500-HTM">Spidol Besar Snowman 500 Permanent Hitam (1 Pcs)</option>
+                    <option value="12500" data-kode="SPID-SNW-BM-BRU">Spidol Boardmarker Snowman Biru (1 Pcs)</option>
+                    <option value="140000" data-kode="SPID-SNW-BMK-BRU">Spidol Boardmarker Snowman Biru (1 Kotak/12 Pcs)</option>
+                    <option value="3000" data-kode="SPID-SNW-AG-BRU">Spidol Kecil Snowman Warna Biru (1 Pcs)</option>
+                    <option value="12000" data-kode="SPID-SNW-500-BRU">Spidol Besar Snowman 500 Permanent Biru (1 Pcs)</option>
+                    <option value="12500" data-kode="SPID-SNW-BM-MRH">Spidol Boardmarker Snowman Merah (1 Pcs)</option>
+                    <option value="140000" data-kode="SPID-SNW-BMK-MRH">Spidol Boardmarker Snowman Merah (1 Kotak/12 Pcs)</option>
+                    <option value="3000" data-kode="SPID-SNW-AG-MRH">Spidol Kecil Snowman Warna Merah (1 Pcs)</option>
+                    <option value="12000" data-kode="SPID-SNW-500-MRH">Spidol Besar Snowman 500 Permanent Merah (1 Pcs)</option>
+                    <option value="12500" data-kode="SPID-SNW-BM-HJU">Spidol Boardmarker Snowman Hijau (1 Pcs)</option>
+                    <option value="140000" data-kode="SPID-SNW-BMK-HJU">Spidol Boardmarker Snowman Hijau (1 Kotak/12 Pcs)</option>
+                    <option value="3000" data-kode="SPID-SNW-AG-HJU">Spidol Kecil Snowman Warna Hijau (1 Pcs)</option>
+                    <option value="12000" data-kode="SPID-SNW-500-HJU">Spidol Besar Snowman 500 Permanent Hijau (1 Pcs)</option>
+                    <option value="6000" data-kode="PNS-FBC-2B">Pensil Faber-Castell 2B Original (1 Pcs)</option>
+                    <option value="65000" data-kode="PNS-FBC-2BK">Pensil Faber-Castell 2B Original (1 Kotak/12 Pcs)</option>
+                    <option value="5000" data-kode="PNS-LYR-2B">Pensil Lyra 2B (1 Pcs)</option>
+                    <option value="4000" data-kode="PNG-EB-40">Penghapus Faber-Castell EB-40 (1 Pcs)</option>
+                    <option value="5000" data-kode="PNG-STDL-B40">Penghapus Staedtler Black B40 (1 Pcs)</option>
+                    <option value="8000" data-kode="TIPEX-KKO-CAIR">Correction Fluid / Tipe-X Cair Kenko (1 Pcs)</option>
+                    <option value="12000" data-kode="TIPEX-KKO-KERT">Correction Tape / Tipe-X Kertas Kenko (1 Pcs)</option>
+                    <option value="22000" data-kode="HL-STB-BOSS">Highlighter Stabilo Boss Original (Warna-Warni)</option>
+                    <option value="10000" data-kode="SPID-SNW-OPF-HI">Spidol Snowman OHP Fine Hitam Permanent</option>
+                    <option value="11000" data-kode="SPID-SNW-OPW-HI">Spidol Snowman OHP Whiteboard Hitam</option>
+                    <option value="10000" data-kode="SPID-SNW-OPF-BI">Spidol Snowman OHP Fine Biru Permanent</option>
+                    <option value="11000" data-kode="SPID-SNW-OPW-BI">Spidol Snowman OHP Whiteboard Biru</option>
+                    <option value="10000" data-kode="SPID-SNW-OPF-ME">Spidol Snowman OHP Fine Merah Permanent</option>
+                    <option value="11000" data-kode="SPID-SNW-OPW-ME">Spidol Snowman OHP Whiteboard Merah</option>
+                </optgroup>
+                <optgroup label="Alat Tulis Kantor (Filing)">
+                    <option value="3500" data-kode="MAP-SNH-PL-PCS">Map Snelhecter Plastik (1 Pcs)</option>
+                    <option value="35000" data-kode="MAP-SNH-PL-LUS">Map Snelhecter Plastik (1 Lusin / 12 Pcs)</option>
+                    <option value="2500" data-kode="MAP-SNH-KR-PCS">Map Snelhecter Kertas (1 Pcs)</option>
+                    <option value="24000" data-kode="MAP-SNH-KR-LUS">Map Snelhecter Kertas (1 Lusin / 12 Pcs)</option>
+                    <option value="3000" data-kode="MAP-LF-BG-PCS">Map L-Folder Bening (1 Pcs)</option>
+                    <option value="30000" data-kode="MAP-LF-BG-LUS">Map L-Folder Bening (1 Lusin / 12 Pcs)</option>
+                    <option value="6000" data-kode="MAP-MK-BC-PCS">Map Map Kantong Berbancing (1 Pcs)</option>
+                    <option value="65000" data-kode="MAP-MK-BC-LUS">Map Map Kantong Berbancing (1 Lusin / 12 Pcs)</option>
+                    <option value="45000" data-kode="ORD-BMB-F4">Ordner Bantex F4 Tebal 7cm Blue/Black</option>
+                    <option value="43000" data-kode="ORD-BMB-A4">Ordner Bantex A4 Tebal 7cm Blue/Black</option>
+                    <option value="28000" data-kode="ORD-BNG-F4">Ordner Bindex F4 Ekonomis</option>
+                    <option value="35000" data-kode="BOX-ARS-PL">Box Arsip Plastik / Kotak Dokumen</option>
+                </optgroup>
+                <optgroup label="Alat Tulis Kantor (Buku)">
+                    <option value="45000" data-kode="BK-SD38-PACK">Buku Tulis SiDu 38 Lembar (1 Pack Isi 10 Pcs)</option>
+                    <option value="62000" data-kode="BK-SD58-PACK">Buku Tulis SiDu 58 Lembar (1 Pack Isi 10 Pcs)</option>
+                    <option value="55000" data-kode="BK-KK40-PACK">Buku Tulis Kiky 40 Lembar (1 Pack Isi 10 Pcs)</option>
+                    <option value="115000" data-kode="BK-KK100-PACK">Buku Tulis Kiky 100 Lembar (1 Pack Isi 10 Pcs)</option>
+                    <option value="25000" data-kode="BK-EXP-F4-100">Buku Expedisi Hardcover F4 100 Lembar</option>
+                    <option value="35000" data-kode="BK-FOL-100">Buku Folio Hardcover Paperline 100 Lembar</option>
+                    <option value="60000" data-kode="BK-FOL-200">Buku Folio Hardcover Paperline 200 Lembar</option>
+                    <option value="12000" data-kode="BK-KWT-BESAR">Buku Kwitansi Paperline Ukuran Besar</option>
+                    <option value="6000" data-kode="BK-KWT-KECIL">Buku Kwitansi Paperline Ukuran Kecil</option>
+                    <option value="10000" data-kode="BK-NOTA-2P">Buku Nota / Faktur 2 Rangkap (NCR Carbonless)</option>
+                    <option value="14000" data-kode="BK-NOTA-3P">Buku Nota / Faktur 3 Rangkap (NCR Carbonless)</option>
+                    <option value="15000" data-kode="BK-MEMO-POST">Sticky Notes / Post-it Kenko 3x3 Inch Warna</option>
+                    <option value="7100" data-kode="BK-GAMBAR-A4-01">Buku Gambar Sinar Dunia Ukuran A4 Seri-01</option>
+                    <option value="7200" data-kode="BK-GAMBAR-A4-02">Buku Gambar Sinar Dunia Ukuran A4 Seri-02</option>
+                    <option value="7300" data-kode="BK-GAMBAR-A4-03">Buku Gambar Sinar Dunia Ukuran A4 Seri-03</option>
+                    <option value="7400" data-kode="BK-GAMBAR-A4-04">Buku Gambar Sinar Dunia Ukuran A4 Seri-04</option>
+                    <option value="7500" data-kode="BK-GAMBAR-A4-05">Buku Gambar Sinar Dunia Ukuran A4 Seri-05</option>
+                    <option value="7600" data-kode="BK-GAMBAR-A4-06">Buku Gambar Sinar Dunia Ukuran A4 Seri-06</option>
+                    <option value="7700" data-kode="BK-GAMBAR-A4-07">Buku Gambar Sinar Dunia Ukuran A4 Seri-07</option>
+                    <option value="7800" data-kode="BK-GAMBAR-A4-08">Buku Gambar Sinar Dunia Ukuran A4 Seri-08</option>
+                    <option value="7900" data-kode="BK-GAMBAR-A4-09">Buku Gambar Sinar Dunia Ukuran A4 Seri-09</option>
+                    <option value="8000" data-kode="BK-GAMBAR-A4-10">Buku Gambar Sinar Dunia Ukuran A4 Seri-10</option>
+                    <option value="8100" data-kode="BK-GAMBAR-A4-11">Buku Gambar Sinar Dunia Ukuran A4 Seri-11</option>
+                    <option value="8200" data-kode="BK-GAMBAR-A4-12">Buku Gambar Sinar Dunia Ukuran A4 Seri-12</option>
+                    <option value="8300" data-kode="BK-GAMBAR-A4-13">Buku Gambar Sinar Dunia Ukuran A4 Seri-13</option>
+                    <option value="8400" data-kode="BK-GAMBAR-A4-14">Buku Gambar Sinar Dunia Ukuran A4 Seri-14</option>
+                    <option value="8500" data-kode="BK-GAMBAR-A4-15">Buku Gambar Sinar Dunia Ukuran A4 Seri-15</option>
+                </optgroup>
+                <optgroup label="Alat Tulis Kantor (Perekat/Alat)">
+                    <option value="20000" data-kode="LKB-DMR-BEN2">Lakban Bening Daimaru 2 Inch x 90 Yard</option>
+                    <option value="20000" data-kode="LKB-DMR-COK2">Lakban Cokelat Daimaru 2 Inch x 90 Yard</option>
+                    <option value="25000" data-kode="LKB-HIT-KAIN">Lakban Kain Hitam Jilid 2 Inch (Cloth Tape)</option>
+                    <option value="18000" data-kode="LKB-HIT-KAI15">Lakban Kain Hitam Jilid 1.5 Inch (Cloth Tape)</option>
+                    <option value="10000" data-kode="LKB-PAP-1IN">Lakban Kertas / Masking Tape 1 Inch</option>
+                    <option value="15000" data-kode="LKB-DBL-FOAM">Double Tape Foam Hijau 1 Inch Kuat</option>
+                    <option value="10000" data-kode="LEM-POV-BESAR">Lem Cair Povinal Ukuran Besar (1 Pcs)</option>
+                    <option value="12000" data-kode="LEM-STK-UHU">Lem Batang / Glue Stick UHU 8gr</option>
+                    <option value="15000" data-kode="LEM-ALT-G">Lem Korea / Lem Setan Alteco G Original</option>
+                    <option value="18000" data-kode="CUT-KKO-L500">Cutter Besar Kenko L-500</option>
+                    <option value="10000" data-kode="IS-CUT-L500">Isi Pisau Cutter Besar Kenko (1 Tiub)</option>
+                    <option value="14000" data-kode="GNT-JOY-828">Gunting Besar Joyko SC-828</option>
+                    <option value="4000" data-kode="PGR-PL-30CM">Penggaris Plastik Joyko 30cm</option>
+                    <option value="9000" data-kode="PGR-BESI-30">Penggaris Besi Stainless Steel 30cm</option>
+                </optgroup>
+                <optgroup label="Alat Tulis Kantor (Staples/Clip)">
+                    <option value="16000" data-kode="STP-KKO-HD10">Stapler Kenko HD-10 (Kecil)</option>
+                    <option value="45000" data-kode="STP-KKO-HD50">Stapler Kenko HD-50 (Sedang)</option>
+                    <option value="275000" data-kode="STP-MAX-HD12">Stapler Jilid Besar Max HD-12N/13 (Heavy Duty)</option>
+                    <option value="4500" data-kode="IS-STP-10">Isi Staples Kenko No. 10 (1 Box Kecil)</option>
+                    <option value="9000" data-kode="IS-STP-246">Isi Staples Kenko No. 3 / 24-6 (1 Box Kecil)</option>
+                    <option value="28000" data-kode="IS-STP-1210">Isi Staples Jilid Besar Max 1210 (1 Box)</option>
+                    <option value="5000" data-kode="CLP-PPR-105">Paper Clip Joyko No. 105 (Kecil/Box)</option>
+                    <option value="8000" data-kode="CLP-PPR-108">Paper Clip Joyko No. 108 (Besar/Box)</option>
+                    <option value="7000" data-kode="CLP-BD-105">Binder Clip Joyko No. 105 (Kecil/Box Isi 12)</option>
+                    <option value="12000" data-kode="CLP-BD-155">Binder Clip Joyko No. 155 (Medium/Box Isi 12)</option>
+                    <option value="24000" data-kode="CLP-BD-260">Binder Clip Joyko No. 260 (Besar/Box Isi 12)</option>
+                </optgroup>
+                <optgroup label="Layanan Fotocopy">
+                    <option value="500" data-kode="FC-A4-SP">Fotocopy A4 Hitam Putih (Satu Sisi)</option>
+                    <option value="800" data-kode="FC-A4-BB">Fotocopy A4 Hitam Putih (Bolak-Balik)</option>
+                    <option value="700" data-kode="FC-F4-SP">Fotocopy F4/Folio Hitam Putih (Satu Sisi)</option>
+                    <option value="1000" data-kode="FC-F4-BB">Fotocopy F4/Folio Hitam Putih (Bolak-Balik)</option>
+                    <option value="2000" data-kode="FC-A3-HP">Fotocopy A3 Hitam Putih</option>
+                    <option value="2000" data-kode="FC-A4-WR-T">Fotocopy A4 Warna (Tulisan / Teks)</option>
+                    <option value="5000" data-kode="FC-A4-WR-F">Fotocopy A4 Warna (Gambar / Full Color)</option>
+                    <option value="2500" data-kode="FC-F4-WR-T">Fotocopy F4 Warna (Tulisan / Teks)</option>
+                    <option value="6000" data-kode="FC-F4-WR-F">Fotocopy F4 Warna (Gambar / Full Color)</option>
+                    <option value="1000" data-kode="FC-KTP">Fotocopy Fotocopy KTP / Kartu Identitas</option>
+                    <option value="400" data-kode="FC-Buku">Fotocopy Fotocopy Buku / Diktat Teber (Per Halaman)</option>
+                </optgroup>
+                <optgroup label="Layanan Jilid">
+                    <option value="6000" data-kode="JLD-LKB-A4">Jilid Lakban + Mika Bening (Standar) Ukuran A4</option>
+                    <option value="7000" data-kode="JLD-LKB-F4">Jilid Lakban + Mika Bening (Standar) Ukuran F4</option>
+                    <option value="8000" data-kode="JLD-MIK-A4">Jilid Mika Plastik Tebal Depan Belakang Ukuran A4</option>
+                    <option value="9000" data-kode="JLD-MIK-F4">Jilid Mika Plastik Tebal Depan Belakang Ukuran F4</option>
+                    <option value="15000" data-kode="JLD-SP-TIP-A4">Jilid Spiral Plastik (Tipis <50 Lembar) Ukuran A4</option>
+                    <option value="17000" data-kode="JLD-SP-TIP-F4">Jilid Spiral Plastik (Tipis <50 Lembar) Ukuran F4</option>
+                    <option value="25000" data-kode="JLD-SP-TEB-A4">Jilid Spiral Plastik (Tebal >50 Lembar) Ukuran A4</option>
+                    <option value="28000" data-kode="JLD-SP-TEB-F4">Jilid Spiral Plastik (Tebal >50 Lembar) Ukuran F4</option>
+                    <option value="30000" data-kode="JLD-SKW-A4">Jilid Spiral Kawat / Besi (Eksklusif) Ukuran A4</option>
+                    <option value="35000" data-kode="JLD-SKW-F4">Jilid Spiral Kawat / Besi (Eksklusif) Ukuran F4</option>
+                    <option value="35000" data-kode="JLD-SOFT-A4">Jilid Softcover + Laminating (Diktat/Modul) Ukuran A4</option>
+                    <option value="40000" data-kode="JLD-SOFT-F4">Jilid Softcover + Laminating (Diktat/Modul) Ukuran F4</option>
+                    <option value="65000" data-kode="JLD-HARD-SKR-A4">Jilid Hardcover Skripsi (Tulisan Emas / Emboss) Ukuran A4</option>
+                    <option value="75000" data-kode="JLD-HARD-SKR-F4">Jilid Hardcover Skripsi (Tulisan Emas / Emboss) Ukuran F4</option>
+                    <option value="50000" data-kode="JLD-HARD-STD-A4">Jilid Hardcover Standar (Tanpa Emboss) Ukuran A4</option>
+                    <option value="55000" data-kode="JLD-HARD-STD-F4">Jilid Hardcover Standar (Tanpa Emboss) Ukuran F4</option>
+                </optgroup>
+                <optgroup label="Baterai Alkaline">
+                    <option value="18000.0" data-kode="BAT-ABC-A2-2P">Baterai ABC Alkaline AA / A2 (Isi 2 Pcs)</option>
+                    <option value="34000.0" data-kode="BAT-ABC-A2-4P">Baterai ABC Alkaline AA / A2 (Isi 4 Pcs)</option>
+                    <option value="20000.0" data-kode="BAT-ABC-A3-2P">Baterai ABC Alkaline AAA / A3 (Isi 2 Pcs)</option>
+                    <option value="38000.0" data-kode="BAT-ABC-A3-4P">Baterai ABC Alkaline AAA / A3 (Isi 4 Pcs)</option>
+                    <option value="28000.0" data-kode="BAT-ENR-A2-2P">Baterai Energizer AA / A2 (Isi 2 Pcs)</option>
+                    <option value="53000.0" data-kode="BAT-ENR-A2-4P">Baterai Energizer AA / A2 (Isi 4 Pcs)</option>
+                    <option value="30000.0" data-kode="BAT-ENR-A3-2P">Baterai Energizer AAA / A3 (Isi 2 Pcs)</option>
+                    <option value="57000.0" data-kode="BAT-ENR-A3-4P">Baterai Energizer AAA / A3 (Isi 4 Pcs)</option>
+                    <option value="28000.0" data-kode="BAT-DRC-A2-2P">Baterai Duracell AA / A2 (Isi 2 Pcs)</option>
+                    <option value="53000.0" data-kode="BAT-DRC-A2-4P">Baterai Duracell AA / A2 (Isi 4 Pcs)</option>
+                    <option value="30000.0" data-kode="BAT-DRC-A3-2P">Baterai Duracell AAA / A3 (Isi 2 Pcs)</option>
+                    <option value="57000.0" data-kode="BAT-DRC-A3-4P">Baterai Duracell AAA / A3 (Isi 4 Pcs)</option>
+                </optgroup>
+                <optgroup label="Parts Printer">
+                    <option value="125000" data-kode="PRN-EPS-003BK">Tinta Epson 003 Black Original Botol</option>
+                    <option value="125000" data-kode="PRN-EPS-003C">Tinta Epson 003 Cyan Original Botol</option>
+                    <option value="125000" data-kode="PRN-EPS-003M">Tinta Epson 003 Magenta Original Botol</option>
+                    <option value="125000" data-kode="PRN-EPS-003Y">Tinta Epson 003 Yellow Original Botol</option>
+                    <option value="135000" data-kode="PRN-EPS-664BK">Tinta Epson 664 Black Original Botol (L310/L360)</option>
+                    <option value="135000" data-kode="PRN-EPS-664C">Tinta Epson 664 Cyan Original Botol</option>
+                    <option value="135000" data-kode="PRN-EPS-664M">Tinta Epson 664 Magenta Original Botol</option>
+                    <option value="135000" data-kode="PRN-EPS-664Y">Tinta Epson 664 Yellow Original Botol</option>
+                    <option value="145000" data-kode="PRN-CAN-71BK">Tinta Canon GI-71 Black Original (G1020/G2020)</option>
+                    <option value="145000" data-kode="PRN-CAN-71C">Tinta Canon GI-71 Cyan Original</option>
+                    <option value="295000" data-kode="PRN-CRT-PG745">Cartridge Canon PG-745 Black Original</option>
+                    <option value="410000" data-kode="PRN-CRT-CL746">Cartridge Canon CL-746 Color Original</option>
+                    <option value="310000" data-kode="PRN-CRT-PG810">Cartridge Canon PG-810 Black Original</option>
+                    <option value="435000" data-kode="PRN-CRT-CL811">Cartridge Canon CL-811 Color Original</option>
+                    <option value="175000" data-kode="PRN-CRT-HP682B">Cartridge HP 682 Black Original</option>
+                    <option value="175000" data-kode="PRN-CRT-HP682C">Cartridge HP 682 Color Original</option>
+                    <option value="115000" data-kode="PRN-HD-EPS-L3110">Print Head Epson L3110 / L1110 / L3210 Original</option>
+                    <option value="525000" data-kode="PRN-HD-CAN-G1000B">Print Head Canon CA91 Black (G1000/G2000/G3000)</option>
+                    <option value="625000" data-kode="PRN-HD-CAN-G1000C">Print Head Canon CA92 Color (G1000/G2000/G3000)</option>
+                    <option value="45000" data-kode="PRN-ROL-EPS-L3110">Roller Pick Up / Karet Penarik Kertas Epson L3110</option>
+                    <option value="35000" data-kode="PRN-ROL-CAN-IP2770">Roller Penarik Kertas Canon IP2770 / MP287</option>
+                    <option value="15000" data-kode="PRN-DMP-EPS">Damper Tinta Epson L Series (1 Pcs)</option>
+                    <option value="20000" data-kode="PRN-KBL-USB">Kabel Data Printer USB 1.5 Meter Tebal Bagus</option>
+                    <option value="450000" data-kode="PRN-MAIN-L3110">Mainboard / Motherboard Printer Epson L3110 (Tested)</option>
+                    <option value="85000" data-kode="PRN-MNT-L3110">Maintenance Box / Waste Ink Pad Epson L3110/L3210</option>
+                    <option value="65000" data-kode="PRN-RBN-LX310">Ribbon Cartridge Epson LX-310 Dot Matrix Original</option>
+                </optgroup>
+                <optgroup label="Parts Komputer">
+                    <option value="250000" data-kode="SSD-SATA-128">SSD Sata V-Gen / Eyota 128GB 2.5 Inch</option>
+                    <option value="375000" data-kode="SSD-SATA-256">SSD Sata V-Gen / RX7 256GB 2.5 Inch</option>
+                    <option value="580000" data-kode="SSD-SATA-512">SSD Sata V-Gen / Kingston 512GB 2.5 Inch</option>
+                    <option value="450000" data-kode="SSD-NVME-256">SSD M.2 NVMe Kingston / V-Gen 256GB High Speed</option>
+                    <option value="695000" data-kode="SSD-NVME-512">SSD M.2 NVMe Kingston / ADATA 512GB High Speed</option>
+                    <option value="1250000" data-kode="SSD-NVME-1TB">SSD M.2 NVMe Samsung / Crucial 1TB NVMe PCIe</option>
+                    <option value="650000" data-kode="HDD-PC-1TB">Harddisk Internal PC Seagate BarraCuda 1TB Sata</option>
+                    <option value="920000" data-kode="HDD-EXT-1TB">Harddisk Eksternal WD Elements / Toshiba 1TB USB 3.0</option>
+                    <option value="185000" data-kode="RAM-PC-D3-4G">RAM PC DDR3 4GB V-Gen / Kingston LongDIMM</option>
+                    <option value="295000" data-kode="RAM-PC-D3-8G">RAM PC DDR3 8GB V-Gen / Kingston LongDIMM</option>
+                    <option value="350000" data-kode="RAM-PC-D4-8G">RAM PC DDR4 8GB Kingston HyperX / V-Gen 2666Mhz/3200Mhz</option>
+                    <option value="680000" data-kode="RAM-PC-D4-16G">RAM PC DDR4 16GB Kingston HyperX / Corsair 3200Mhz</option>
+                    <option value="365000" data-kode="RAM-LP-D4-8G">RAM Laptop DDR4 8GB V-Gen / Kingston SODIMM</option>
+                    <option value="695000" data-kode="RAM-LP-D4-16G">RAM Laptop DDR4 16GB V-Gen / Kingston SODIMM</option>
+                    <option value="195000" data-kode="COMP-PSU-450W">Power Supply / PSU Standar 450W / 500W Simbadda/Advance</option>
+                    <option value="550000" data-kode="COMP-PSU-500W-80P">Power Supply 500W 80+ Bronze Aerocool / Deepcool Lux</option>
+                    <option value="65000" data-kode="COMP-FAN-PROC">Fan / Cooler Processor Intel LGA 115X Standar</option>
+                    <option value="15000" data-kode="COMP-PST-PROC">Pasta Suntik Processor / Thermal Paste Silikon Kecil</option>
+                    <option value="10000" data-kode="COMP-BAT-CMOS">Baterai CMOS Motherboard CR2032 Maxell/Sony Original</option>
+                    <option value="380000" data-kode="COMP-CASE-STD">Casing Komputer Standar + Power Supply 450W</option>
+                    <option value="145000" data-kode="ACC-KBD-LOGI-K120">Keyboard USB Logitech K120 Original Awet</option>
+                    <option value="85000" data-kode="ACC-MSE-LOGI-B100">Mouse USB Optical Logitech B100 Original</option>
+                    <option value="345000" data-kode="ACC-KBD-MSE-WIRE">Combo Keyboard + Mouse Wireless Logitech MK220</option>
+                    <option value="15000" data-kode="ACC-MSE-PAD-STD">Mousepad Hitam Polos Standar Nyaman</option>
+                    <option value="75000" data-kode="ACC-FD-16GB">Flashdisk SanDisk Cruzer Blade 16GB USB 2.0</option>
+                    <option value="85000" data-kode="ACC-FD-32GB">Flashdisk SanDisk Cruzer Blade 32GB USB 2.0</option>
+                    <option value="125000" data-kode="ACC-FD-64GB">Flashdisk SanDisk Cruzer Blade 64GB USB 3.0</option>
+                    <option value="25000" data-kode="KBL-HDMI-15">Kabel HDMI ke HDMI 1.5 Meter Gold Plated</option>
+                    <option value="45000" data-kode="KBL-HDMI-3">Kabel HDMI ke HDMI 3 Meter Gold Plated</option>
+                    <option value="25000" data-kode="KBL-VGA-15">Kabel VGA Male to Male 1.5 Meter</option>
+                    <option value="20000" data-kode="KBL-PWR-PC">Kabel Power CPU / Monitor Komputer Colokan Standar</option>
+                    <option value="25000" data-kode="NET-LAN-3">Kabel Jaringan LAN Cat5e/Cat6 Jadi Pabrikan 3 Meter</option>
+                    <option value="55000" data-kode="NET-LAN-10">Kabel Jaringan LAN Cat5e/Cat6 Jadi Pabrikan 10 Meter</option>
+                    <option value="125000" data-kode="NET-USB-WIFI">USB Wifi Adapter TP-Link TL-WN725N Nano Wireless Receiver</option>
+                </optgroup>
+                <optgroup label="Alat Tulis Kantor (Amplop)">
+                    <option value="35000" data-kode="AMP-JOY-90">Amplop Paperline / Joyko Ukuran 90 (Kabinet) (1 Pack/100 Pcs)</option>
+                    <option value="58000" data-kode="AMP-JOY-110">Amplop Paperline / Joyko Ukuran 110 (Besar) (1 Pack/100 Pcs)</option>
+                    <option value="42000" data-kode="AMP-JOY-F4">Amplop Paperline / Joyko Ukuran F4 (Brown Airmail) (1 Pack/100 Pcs)</option>
+                    <option value="35000" data-kode="AMP-JOY-A4">Amplop Paperline / Joyko Ukuran A4 (Cokelat Tali) (1 Pack/100 Pcs)</option>
+                </optgroup>
+                <optgroup label="Alat Tulis Kantor (Aksesoris Meja)">
+                    <option value="4200" data-kode="ATK-ACC-01">Id Card Holder / Name Tag Plastik Tipe T-01</option>
+                    <option value="4400" data-kode="ATK-ACC-02">Id Card Holder / Name Tag Plastik Tipe T-02</option>
+                    <option value="4600" data-kode="ATK-ACC-03">Id Card Holder / Name Tag Plastik Tipe T-03</option>
+                    <option value="4800" data-kode="ATK-ACC-04">Id Card Holder / Name Tag Plastik Tipe T-04</option>
+                    <option value="5000" data-kode="ATK-ACC-05">Id Card Holder / Name Tag Plastik Tipe T-05</option>
+                    <option value="5200" data-kode="ATK-ACC-06">Id Card Holder / Name Tag Plastik Tipe T-06</option>
+                    <option value="5400" data-kode="ATK-ACC-07">Id Card Holder / Name Tag Plastik Tipe T-07</option>
+                    <option value="5600" data-kode="ATK-ACC-08">Id Card Holder / Name Tag Plastik Tipe T-08</option>
+                    <option value="5800" data-kode="ATK-ACC-09">Id Card Holder / Name Tag Plastik Tipe T-09</option>
+                    <option value="6000" data-kode="ATK-ACC-10">Id Card Holder / Name Tag Plastik Tipe T-10</option>
+                    <option value="6200" data-kode="ATK-ACC-11">Id Card Holder / Name Tag Plastik Tipe T-11</option>
+                    <option value="6400" data-kode="ATK-ACC-12">Id Card Holder / Name Tag Plastik Tipe T-12</option>
+                    <option value="6600" data-kode="ATK-ACC-13">Id Card Holder / Name Tag Plastik Tipe T-13</option>
+                    <option value="6800" data-kode="ATK-ACC-14">Id Card Holder / Name Tag Plastik Tipe T-14</option>
+                    <option value="7000" data-kode="ATK-ACC-15">Id Card Holder / Name Tag Plastik Tipe T-15</option>
+                    <option value="7200" data-kode="ATK-ACC-16">Id Card Holder / Name Tag Plastik Tipe T-16</option>
+                    <option value="7400" data-kode="ATK-ACC-17">Id Card Holder / Name Tag Plastik Tipe T-17</option>
+                    <option value="7600" data-kode="ATK-ACC-18">Id Card Holder / Name Tag Plastik Tipe T-18</option>
+                    <option value="7800" data-kode="ATK-ACC-19">Id Card Holder / Name Tag Plastik Tipe T-19</option>
+                    <option value="8000" data-kode="ATK-ACC-20">Id Card Holder / Name Tag Plastik Tipe T-20</option>
+                    <option value="8200" data-kode="ATK-ACC-21">Id Card Holder / Name Tag Plastik Tipe T-21</option>
+                    <option value="8400" data-kode="ATK-ACC-22">Id Card Holder / Name Tag Plastik Tipe T-22</option>
+                    <option value="8600" data-kode="ATK-ACC-23">Id Card Holder / Name Tag Plastik Tipe T-23</option>
+                    <option value="8800" data-kode="ATK-ACC-24">Id Card Holder / Name Tag Plastik Tipe T-24</option>
+                    <option value="9000" data-kode="ATK-ACC-25">Id Card Holder / Name Tag Plastik Tipe T-25</option>
+                    <option value="9200" data-kode="ATK-ACC-26">Id Card Holder / Name Tag Plastik Tipe T-26</option>
+                    <option value="9400" data-kode="ATK-ACC-27">Id Card Holder / Name Tag Plastik Tipe T-27</option>
+                    <option value="9600" data-kode="ATK-ACC-28">Id Card Holder / Name Tag Plastik Tipe T-28</option>
+                    <option value="9800" data-kode="ATK-ACC-29">Id Card Holder / Name Tag Plastik Tipe T-29</option>
+                    <option value="10000" data-kode="ATK-ACC-30">Id Card Holder / Name Tag Plastik Tipe T-30</option>
+                </optgroup>
+                <optgroup label="Parts Komputer (Konektor)">
+                    <option value="26000" data-kode="COMP-CON-01">Converter Adapter / Sambungan Kabel Tipe-C ke USB-01</option>
+                    <option value="27000" data-kode="COMP-CON-02">Converter Adapter / Sambungan Kabel Tipe-C ke USB-02</option>
+                    <option value="28000" data-kode="COMP-CON-03">Converter Adapter / Sambungan Kabel Tipe-C ke USB-03</option>
+                    <option value="29000" data-kode="COMP-CON-04">Converter Adapter / Sambungan Kabel Tipe-C ke USB-04</option>
+                    <option value="30000" data-kode="COMP-CON-05">Converter Adapter / Sambungan Kabel Tipe-C ke USB-05</option>
+                    <option value="31000" data-kode="COMP-CON-06">Converter Adapter / Sambungan Kabel Tipe-C ke USB-06</option>
+                    <option value="32000" data-kode="COMP-CON-07">Converter Adapter / Sambungan Kabel Tipe-C ke USB-07</option>
+                    <option value="33000" data-kode="COMP-CON-08">Converter Adapter / Sambungan Kabel Tipe-C ke USB-08</option>
+                    <option value="34000" data-kode="COMP-CON-09">Converter Adapter / Sambungan Kabel Tipe-C ke USB-09</option>
+                    <option value="35000" data-kode="COMP-CON-10">Converter Adapter / Sambungan Kabel Tipe-C ke USB-10</option>
+                    <option value="36000" data-kode="COMP-CON-11">Converter Adapter / Sambungan Kabel Tipe-C ke USB-11</option>
+                    <option value="37000" data-kode="COMP-CON-12">Converter Adapter / Sambungan Kabel Tipe-C ke USB-12</option>
+                    <option value="38000" data-kode="COMP-CON-13">Converter Adapter / Sambungan Kabel Tipe-C ke USB-13</option>
+                    <option value="39000" data-kode="COMP-CON-14">Converter Adapter / Sambungan Kabel Tipe-C ke USB-14</option>
+                    <option value="40000" data-kode="COMP-CON-15">Converter Adapter / Sambungan Kabel Tipe-C ke USB-15</option>
+                    <option value="41000" data-kode="COMP-CON-16">Converter Adapter / Sambungan Kabel Tipe-C ke USB-16</option>
+                    <option value="42000" data-kode="COMP-CON-17">Converter Adapter / Sambungan Kabel Tipe-C ke USB-17</option>
+                    <option value="43000" data-kode="COMP-CON-18">Converter Adapter / Sambungan Kabel Tipe-C ke USB-18</option>
+                    <option value="44000" data-kode="COMP-CON-19">Converter Adapter / Sambungan Kabel Tipe-C ke USB-19</option>
+                    <option value="45000" data-kode="COMP-CON-20">Converter Adapter / Sambungan Kabel Tipe-C ke USB-20</option>
+                </optgroup>
+
+                    </select>
+                </div>
+
+                <!-- Quantity Box -->
+                <div class="form-group" style="width: 70px;">
+                    <label class="form-label">Jumlah</label>
+                    <input type="number" id="qtyBarang" class="form-input" value="1" min="1">
+                </div>
+
+                <!-- Add Buttons -->
+                <div class="form-group" style="padding-top: 18px; flex-direction: row; gap: 8px;">
+                    <button class="btn btn-add" onclick="tambahDariPilihan()">+ Tambah Item</button>
+                    <button class="btn btn-manual" onclick="tambahBarisKosong()">+ Baris Kosong</button>
+                </div>
+                
+                <!-- Print Trigger -->
+                <button class="btn btn-print" onclick="window.print()">🖨️ Cetak Faktur</button>
+            </div>
+            
+            <p style="font-size: 11px; color: #64748b; margin: 5px 0 0 0;">
+                💡 <i>Aplikasi berisi database lengkap (+300 item) ATK, Fotocopy, Jilid, Battery Alkaline A2/A3, Parts Printer & Komputer. Anda bisa mengetik di kotak <b>Cari Nama Barang</b> untuk mempercepat pencarian. Klik tombol [×] merah di sisi kanan untuk menghapus baris.</i>
+            </p>
+        </div>
+    </div>
+
+    <!-- INVOICE PAGE LAYOUT -->
+    <div class="page">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="header-left">
+                <div class="logo-area">
+                    <div class="logo">M</div>
+                    <div>
+                        <div class="title">FAKTUR PENJUALAN</div>
+                        <div class="title">MAKARIOS</div>
+                    </div>
+                </div>
+                <div>JL. DRS. ESAU SESA MANOKWARI</div>
+                <div>WA 085244024522 / 081310178866</div>
+            </div>
+            
+            <div class="header-right">
+                <div class="info-grid">
+                    <div>No Transaksi</div><div>:</div><div contenteditable="true" id="noTransaksi">...</div>
+                    <div>Tanggal</div><div>:</div><div contenteditable="true" id="tglTransaksi">...</div>
+                    <div>Pelanggan</div><div>:</div><div contenteditable="true">UMUM/CASH</div>
+                    <div>Alamat</div><div>:</div><div contenteditable="true">-</div>
+                </div>
+                <div class="info-grid" style="grid-template-columns: 45px 10px auto;">
+                    <div>Dept.</div><div>:</div><div contenteditable="true">UTM</div>
+                    <div>User</div><div>:</div><div contenteditable="true">ISMA</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TRANSACTION TABLE -->
+        <table id="tabelBarang">
+            <thead>
+                <tr>
+                    <th class="text-center" style="width: 5%;">No.</th>
+                    <th style="width: 14%;">Kode Item</th>
+                    <th style="width: 38%;">Nama Item</th>
+                    <th class="text-right" style="width: 12%;">Jml Satuan</th>
+                    <th class="text-right" style="width: 12%;">Harga</th>
+                    <th class="text-right" style="width: 7%;">Pot</th>
+                    <th class="text-right" style="width: 12%;">Total</th>
+                    <th class="text-center action-col no-print" style="width: 5%;">Aksi</th>
+                </tr>
+            </thead>
+            <tbody id="tbodyBarang" oninput="hitungTotal()">
+                <!-- Data kosong/dihapus -->
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="8" class="border-bottom"></td>
+                </tr>
+            </tfoot>
+        </table>
+
+        <!-- SUMMARY CALCULATION SECTION -->
+        <div class="summary-container">
+            <div class="summary-left">
+                <div style="display: flex;">
+                    <div style="width: 100px; font-weight: bold;">Keterangan</div>
+                    <div style="margin-right: 10px;">:</div>
+                    <div contenteditable="true" style="flex:1;">-</div>
+                </div>
+                <div style="display: flex; margin-top: 15px;">
+                    <div style="width: 100px; font-weight: bold;">Terbilang</div>
+                    <div style="margin-right: 10px;">:</div>
+                    <div id="teksTerbilang" contenteditable="true" style="flex:1; font-style: italic; font-weight: bold;">nol rupiah</div>
+                </div>
+            </div>
+
+            <div class="summary-right">
+                <div class="summary-grid">
+                    <div>Jml Item</div><div>:</div><div class="text-right" id="jmlItem">0,00</div>
+                    <div>Sub Total</div><div>:</div><div class="text-right" id="subTotal">0,00</div>
+                    <div>Total Akhir</div><div>:</div><div class="text-right" id="totalAkhir">0,00</div>
+                    <div>Tunai</div><div>:</div><div class="text-right" contenteditable="true" id="tunai" oninput="hitungKembali()">0,00</div>
+                    <div>Kembali</div><div>:</div><div class="text-right" id="kembali">0,00</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FOOTER SIGN STAMP -->
+        <div class="stamp-area">
+            <div class="stamp-box"></div>
+            <div class="stamp-box">
+                <div style="margin-bottom: 5px; font-weight: bold;">Hormat Kami</div>
+                <div class="stamp-placeholder">
+                    <span class="no-print" style="color:#aaa; font-size:10px; position:absolute; top:32px; left:0; right:0;">(Stempel / Tanda Tangan)</span>
+                </div>
+                <div contenteditable="true" style="font-weight: bold;">(........................)</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CORE LOGIC ENGINE -->
+    <script>
+        // Store all original option list for client-side matching and live-filtering
+        const selectElement = document.getElementById('pilihBarang');
+        const allOptionsGroups = Array.from(selectElement.getElementsByTagName('optgroup')).map(group => {
+            return {
+                label: group.label,
+                options: Array.from(group.getElementsByTagName('option')).map(opt => {
+                    return { text: opt.text, value: opt.value, kode: opt.getAttribute('data-kode') };
+                })
+            };
+        });
+
+        // Live Filter Dropdown List
+        function filterDropdown() {
+            const keyword = document.getElementById('cariInput').value.toLowerCase();
+            selectElement.innerHTML = ''; // Wipe current list
+            
+            let firstSelected = false;
+            
+            allOptionsGroups.forEach(group => {
+                const matchingOptions = group.options.filter(opt => opt.text.toLowerCase().includes(keyword));
+                
+                if (matchingOptions.length > 0) {
+                    const optGroup = document.createElement('optgroup');
+                    optGroup.label = group.label;
+                    
+                    matchingOptions.forEach(opt => {
+                        const optionNode = document.createElement('option');
+                        optionNode.value = opt.value;
+                        optionNode.setAttribute('data-kode', opt.kode);
+                        optionNode.textContent = opt.text;
+                        optGroup.appendChild(optionNode);
+                    });
+                    selectElement.appendChild(optGroup);
+                }
+            });
+            
+            if(selectElement.options.length === 0) {
+                const placeholder = document.createElement('option');
+                placeholder.textContent = "-- Tidak ada barang cocok --";
+                placeholder.disabled = true;
+                selectElement.appendChild(placeholder);
+            }
+        }
+
+        // Helper calculations
+        function parseIdr(str) {
+            if(!str) return 0;
+            let clean = str.replace(/\./g, '').replace(',', '.');
+            let val = parseFloat(clean);
+            return isNaN(val) ? 0 : val;
+        }
+
+        function formatIdr(num) {
+            let parts = num.toFixed(2).split('.');
+            parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            return parts.join(',');
+        }
+
+        // Insert Item from chosen selection
+        function tambahDariPilihan() {
+            const select = document.getElementById('pilihBarang');
+            const qtyInput = document.getElementById('qtyBarang').value;
+            
+            if (select.selectedIndex === -1 || select.value === "") {
+                alert("Silakan pilih barang yang valid!");
+                return;
+            }
+
+            const option = select.options[select.selectedIndex];
+            const namaItem = option.text;
+            const kodeItem = option.getAttribute('data-kode');
+            const harga = parseFloat(option.value);
+            const qty = parseFloat(qtyInput) || 1;
+
+            // Detect simple dynamic suffixes for aesthetic billing print
+            let suffix = "PCS";
+            if (namaItem.includes("(1 Rim)")) suffix = "RIM";
+            else if (namaItem.includes("Roll")) suffix = "ROLL";
+            else if (namaItem.includes("Box") || namaItem.includes("Kotak")) suffix = "BOX";
+            else if (namaItem.includes("Pack")) suffix = "PACK";
+            else if (namaItem.includes("Lusin")) suffix = "LSN";
+            else if (namaItem.includes("Fotocopy") || namaItem.includes("Jilid") || namaItem.includes("Lembar")) suffix = "LBR";
+
+            masukkanKeTabel(kodeItem, namaItem, qty, harga, suffix);
+        }
+
+        function tambahBarisKosong() {
+            masukkanKeTabel("-", "NAMA BARANG BARU", 1, 0, "PCS");
+        }
+
+        function masukkanKeTabel(kode, nama, qty, harga, suffix) {
+            const tbody = document.getElementById('tbodyBarang');
+            const rowCount = tbody.getElementsByTagName('tr').length + 1;
+            const tr = document.createElement('tr');
+            
+            tr.innerHTML = `
+                <td class="text-center" contenteditable="true">${rowCount}</td>
+                <td contenteditable="true">${kode}</td>
+                <td contenteditable="true">${nama.toUpperCase()}</td>
+                <td class="text-right" contenteditable="true">${formatIdr(qty)} ${suffix}</td>
+                <td class="text-right" contenteditable="true">${formatIdr(harga)}</td>
+                <td class="text-right" contenteditable="true">0,00</td>
+                <td class="text-right val-total">0,00</td>
+                <td class="action-cell action-col no-print" onclick="hapusBaris(this)">×</td>
+            `;
+            tbody.appendChild(tr);
+            reorderNo();
+            hitungTotal();
+        }
+
+        function hapusBaris(btn) {
+            const row = btn.parentNode;
+            row.parentNode.removeChild(row);
+            reorderNo();
+            hitungTotal();
+        }
+
+        function reorderNo() {
+            const rows = document.getElementById('tbodyBarang').getElementsByTagName('tr');
+            for(let i=0; i<rows.length; i++) {
+                rows[i].getElementsByTagName('td')[0].innerText = (i + 1);
+            }
+        }
+
+        // Dynamic standard formula engine
+        function hitungTotal() {
+            const rows = document.getElementById('tbodyBarang').getElementsByTagName('tr');
+            let grandTotal = 0;
+            let totalQty = 0;
+
+            for(let i=0; i<rows.length; i++) {
+                let cells = rows[i].getElementsByTagName('td');
+                if(cells.length >= 7) {
+                    let qtyStr = cells[3].innerText.replace(/[a-zA-Z]/g, '').trim();
+                    let hrgStr = cells[4].innerText;
+                    let potStr = cells[5].innerText;
+
+                    let qty = parseIdr(qtyStr);
+                    let hrg = parseIdr(hrgStr);
+                    let pot = parseIdr(potStr);
+
+                    let barisTotal = (qty * hrg) - pot;
+                    cells[6].innerText = formatIdr(barisTotal);
+
+                    grandTotal += barisTotal;
+                    totalQty += qty;
+                }
+            }
+
+            document.getElementById('jmlItem').innerText = formatIdr(totalQty);
+            document.getElementById('subTotal').innerText = formatIdr(grandTotal);
+            document.getElementById('totalAkhir').innerText = formatIdr(grandTotal);
+            
+            hitungKembali();
+            document.getElementById('teksTerbilang').innerText = terbilang(grandTotal) + " rupiah";
+        }
+
+        function hitungKembali() {
+            let totalAkhir = parseIdr(document.getElementById('totalAkhir').innerText);
+            let tunai = parseIdr(document.getElementById('tunai').innerText);
+            let kembali = tunai - totalAkhir;
+            
+            if(kembali < 0) kembali = 0;
+            document.getElementById('kembali').innerText = formatIdr(kembali);
+        }
+
+        function terbilang(angka) {
+            angka = Math.floor(angka);
+            if (angka === 0) return "nol";
+            let bilangan = ["", "satu", "dua", "tiga", "empat", "lima", "enam", "tujuh", "delapan", "sembilan", "sepuluh", "sebelas"];
+            if (angka < 12) return bilangan[angka];
+            if (angka < 20) return terbilang(angka - 10) + " belas";
+            if (angka < 100) return terbilang(Math.floor(angka / 10)) + " puluh" + (angka % 10 !== 0 ? " " + terbilang(angka % 10) : "");
+            if (angka < 200) return "seratus" + (angka - 100 !== 0 ? " " + terbilang(angka - 100) : "");
+            if (angka < 1000) return terbilang(Math.floor(angka / 100)) + " ratus" + (angka % 100 !== 0 ? " " + terbilang(angka % 100) : "");
+            if (angka < 2000) return "seribu" + (angka - 1000 !== 0 ? " " + terbilang(angka - 1000) : "");
+            if (angka < 1000000) return terbilang(Math.floor(angka / 1000)) + " ribu" + (angka % 1000 !== 0 ? " " + terbilang(angka % 1000) : "");
+            if (angka < 1000000000) return terbilang(Math.floor(angka / 1000000)) + " juta" + (angka % 1000000 !== 0 ? " " + terbilang(angka % 1000000) : "");
+            return "Angka terlalu besar";
+        }
+
+        // Randomize metadata on load
+        function generateRandomMetadata() {
+            const start = new Date(2026, 0, 5, 8, 0, 0).getTime(); // 5 Jan 2026, 08:00
+            const end = new Date().getTime(); // Current access time
+            let randomDate;
+            
+            // Loop untill the time strictly between 08:00 - 18:00
+            do {
+                randomDate = new Date(start + Math.random() * (end - start));
+            } while (randomDate.getHours() < 8 || randomDate.getHours() >= 18);
+
+            const dd = String(randomDate.getDate()).padStart(2, '0');
+            const mm = String(randomDate.getMonth() + 1).padStart(2, '0');
+            const yyyy = randomDate.getFullYear();
+            const yy = String(yyyy).slice(-2);
+            
+            const hh = String(randomDate.getHours()).padStart(2, '0');
+            const min = String(randomDate.getMinutes()).padStart(2, '0');
+            const ss = String(randomDate.getSeconds()).padStart(2, '0');
+            
+            const formattedDate = `${dd}/${mm}/${yyyy} ${hh}.${min}.${ss}`;
+            
+            // Generate Random No Transaction (5 Digits format)
+            const randomNum = String(Math.floor(Math.random() * 90000) + 10000); 
+            const noTrans = `${randomNum}/KSR/UTM/${mm}${yy}`;
+            
+            document.getElementById('noTransaksi').innerText = noTrans;
+            document.getElementById('tglTransaksi').innerText = formattedDate;
+        }
+
+        window.onload = function() {
+            generateRandomMetadata();
+            hitungTotal();
+        };
+    </script>
+</body>
+</html>
