@@ -539,7 +539,6 @@
         <div class="header">
             <div class="header-left">
                 <div class="logo-area">
-                    <!-- PEMANGGILAN IMAGE LOGO -->
                     <img src="MAKARIOS.bmp" class="logo" alt="Logo Makarios">
                     <div>
                         <div class="title">FAKTUR PENJUALAN</div>
@@ -622,8 +621,8 @@
                 <div class="stamp-placeholder">
                     <span class="no-print" style="color:#aaa; font-size:10px; position:absolute; top:32px; left:0; right:0;">(Stempel / Tanda Tangan)</span>
                     
-                    <!-- PEMANGGILAN IMAGE STEMPEL (Pastikan file stempel.png satu folder) -->
-                    <img src="stempel.png" class="stamp-img" alt="Stempel Makarios">
+                    <!-- PEMANGGILAN IMAGE STEMPEL DENGAN ID BARU -->
+                    <img src="stempel.png" class="stamp-img" alt="Stempel Makarios" id="stempelGambar">
                     
                 </div>
                 <div contenteditable="true" style="font-weight: bold;">(........................)</div>
@@ -844,9 +843,28 @@
             document.getElementById('tglTransaksi').innerText = formattedDate;
         }
 
+        // FUNGSI BARU UNTUK MENGACAK STEMPEL
+        function acakStempel() {
+            const stamp = document.getElementById('stempelGambar');
+            if (stamp) {
+                // Geser 19px ke kiri (-0.5cm) ditambah nilai acak antara -5px hingga +5px
+                const randomX = -19 + (Math.random() * 10 - 5);
+                
+                // Geser atas-bawah secara acak antara -6px hingga +6px
+                const randomY = (Math.random() * 12 - 6);
+                
+                // Rotasi miring secara acak antara -15 derajat hingga +15 derajat
+                const randomRot = (Math.random() * 30 - 15);
+                
+                // Terapkan efek CSS transform ke gambar stempel
+                stamp.style.transform = `translate(${randomX}px, ${randomY}px) rotate(${randomRot}deg)`;
+            }
+        }
+
         window.onload = function() {
             generateRandomMetadata();
             hitungTotal();
+            acakStempel(); // Menjalankan fungsi acak stempel setiap kali direload
         };
     </script>
 </body>
